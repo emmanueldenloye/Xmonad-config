@@ -3,13 +3,16 @@ import           Data.List
 import           Data.Monoid
 import           System.IO
 import           XMonad
--- import           XMonad.Prompt
--- import           XMonad.Prompt.Xmonad
 import           XMonad.Hooks.DynamicLog
+import           XMonad.Hooks.EwmhDesktops
 import           XMonad.Hooks.ManageDocks
-import           XMonad.Util.Run (spawnPipe)
-import           XMonad.Util.EZConfig (additionalKeys,additionalKeysP,removeKeys)
+import           XMonad.Hooks.ManageHelpers
+import           XMonad.Layout.NoBorders
 import qualified XMonad.StackSet as S
+import           XMonad.Util.EZConfig (additionalKeys,additionalKeysP,removeKeys)
+import           XMonad.Util.Run (spawnPipe)
+-- import           XMonad.Prompt
+-- import           XMonad.Prompt.XMonad
 
 main :: IO ()
 main = do
@@ -20,8 +23,10 @@ main = do
           , workspaces                = myWorkspaces
           , borderWidth               = myBorderWidth
           , focusFollowsMouse         = myFocusFollowsMouse
+          , clickJustFocuses         = myClickJustFocuses
           , normalBorderColor         = myNormalBorderColor
           , focusedBorderColor        = myFocusedBorderColor
+          , handleEventHook           = fullscreenEventHook
           , manageHook = manageDocks <+> myManageHook
                          <+> manageHook defaultConfig
           , layoutHook = avoidStruts $ layoutHook defaultConfig
@@ -30,7 +35,7 @@ main = do
                           , ppTitle  = xmobarColor "red" "" . shorten 50
                           }
         } `additionalKeys`
-        [ ((mod4Mask .|. shiftMask, xK_z), spawn "slock")
+        [ ((mod4Mask .|. shiftMask, xK_z), (windows . S.greedyView $ (!! 1) myWorkspaces) >> spawn "slock")
         , ((controlMask, xK_Print), spawn "sleep 0.2; scrot -s")
         , ((0, xK_Print), spawn "scrot")
         , ((mod4Mask, xK_Right), spawn "amixer -D pulse sset Master 4%+")
@@ -46,11 +51,11 @@ myEmacsKeys = zip viewKeys (worker S.greedyView myWorkspaces) ++
               zip shiftKeys (worker S.shift myWorkspaces) ++
               miscKeys
   where
-    modWorkSpaceKey       = "M4-c" ++ " "
+    modWorkSpaceKey       = "M4-c "
     (viewKeys,shiftKeys) = (,) <$> map (modWorkSpaceKey ++)
                                <*> map ((++) $ modWorkSpaceKey ++ "S-")
                                 $ baseWorkSpaceKeys
-    baseWorkSpaceKeys     = Data.List.group "htnsgcrl"
+    baseWorkSpaceKeys     = group "htnsgcrl"
     worker f              = map (windows . f)
     miscKeys              = [("M4-c e", spawn "emacsclient -c")
                             ,("<XF86AudioRaiseVolume>", spawn "amixer -D pulse sset Master 4%+")
@@ -66,35 +71,36 @@ myWorkspaces    = ["firefox"
                   ,"zathura"
                   ,"zsh"
                   ,"org-latex"
-                  ,"erc"
+                  ,"erc/mail"
                   ,"chrome"
                   , "random"]
 
--- Hooks to manage floating windows
+-- hooks to manage floating windows
 myManageHook :: Query (Data.Monoid.Endo WindowSet)
 myManageHook = composeAll
-                [ className =? "Gimp" --> doFloat
-                  ,className =? "VNC Viewer" --> doFloat
-                  ,className =? "Firefox-bin" --> doShift "firefox"
-                  ,(className =? "Firefox" <&&> resource =? "Dialog") --> doFloat
-                  ,className =? "Xmessage" --> doFloat]
+                [className =? "Gimp" --> doFloat
+                 ,className =? "VNC Viewer" --> doFloat
+                 ,className =? "Firefox-bin" --> doShift "firefox"
+                 ,(className =? "Firefox" <&&> resource =? "Dialog") --> doFloat
+                 ,className =? "Xmessage" --> doFloat
+                 ,isFullscreen --> doFullFloat]
 
 myModMask :: KeyMask
 myModMask = mod4Mask
 
 myFocusFollowsMouse :: Bool
-myFocusFollowsMouse = True
+myFocusFollowsMouse = False
 
 -- Border colors for unfocused and focused windows, respectively.
---
+
 myNormalBorderColor :: String
-myNormalBorderColor  = "#dddddd"
+myNormalBorderColor  = "#DDDDDD"
 
 myFocusedBorderColor :: String
 myFocusedBorderColor = "#ff0000"
 
--- myClickJustFocuses :: Bool
--- myClickJustFocuses = True
+myClickJustFocuses :: Bool
+myClickJustFocuses = True
 
 myBorderWidth :: Dimension
-myBorderWidth   = 1
+myBorderWidth   = 0
