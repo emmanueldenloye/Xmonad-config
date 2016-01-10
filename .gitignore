@@ -1,3 +1,8 @@
 /xmonad.hi
 /xmonad.o
+/xmonad
+/xmonad.errors
 /.gitignore~
+/history
+/xmonad.hs~
+/xmonad-x86_64-linux
