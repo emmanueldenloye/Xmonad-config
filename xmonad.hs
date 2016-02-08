@@ -8,7 +8,8 @@ import           XMonad.Hooks.DynamicLog
 import           XMonad.Hooks.EwmhDesktops
 import           XMonad.Hooks.ManageDocks
 import           XMonad.Hooks.ManageHelpers
--- import           XMonad.Layout.NoBorders
+import           XMonad.Layout.Roledex
+import           XMonad.Layout.NoBorders
 import qualified XMonad.StackSet as S
 import           XMonad.Util.EZConfig (additionalKeys,additionalKeysP,removeKeys)
 import           XMonad.Util.Run (spawnPipe)
@@ -27,10 +28,10 @@ main = do
           , clickJustFocuses   = myClickJustFocuses
           , normalBorderColor  = myNormalBorderColor
           , focusedBorderColor = myFocusedBorderColor
-          , handleEventHook    = fullscreenEventHook
+          , handleEventHook    = handleEventHook defaultConfig <+> fullscreenEventHook
           , manageHook         = manageDocks <+> myManageHook
                          <+> manageHook defaultConfig
-          , layoutHook         = avoidStruts $ layoutHook defaultConfig
+          , layoutHook         = avoidStruts myLayout
           , logHook            = dynamicLogWithPP xmobarPP
                           { ppOutput = hPutStrLn xmproc
                           , ppTitle  = xmobarColor "red" "" . shorten 50
@@ -85,13 +86,16 @@ myWorkspaces    = ["firefox"
                   ,"org-latex"
                   ,"zathura"
                   ,"chrome"
-                  , "random"]
+                  ,"random"]
 
 -- hooks to manage floating windows
 myManageHook :: Query (Data.Monoid.Endo WindowSet)
 myManageHook = composeAll
                 [className =? "Gimp" --> doFloat
                  ,className =? "VNC Viewer" --> doFloat
+                 ,className =? "MPlayer" --> doFloat
+                 ,className =? "mpv" --> doFloat
+                 ,className =? "xzgv" --> doFloat
                  ,className =? "Firefox-bin" --> doShift "firefox"
                  ,(className =? "Firefox" <&&> resource =? "Dialog") --> doFloat
                  ,className =? "Xmessage" --> doFloat
@@ -103,8 +107,6 @@ myModMask = mod4Mask
 myFocusFollowsMouse :: Bool
 myFocusFollowsMouse = False
 
--- Border colors for unfocused and focused windows, respectively.
-
 myNormalBorderColor :: String
 myNormalBorderColor  = "#DDDDDD"
 
@@ -114,5 +116,13 @@ myFocusedBorderColor = "#ff0000"
 myClickJustFocuses :: Bool
 myClickJustFocuses = True
 
+myLayout = smartBorders tiled ||| smartBorders Full ||| Roledex -- This is very silly!
+    where
+      tiled = Tall nmaster delta ratio
+      nmaster = 1
+      ratio = 1/2
+      delta = 2 / 100
+
+
 myBorderWidth :: Dimension
-myBorderWidth   = 0
+myBorderWidth   = 1
